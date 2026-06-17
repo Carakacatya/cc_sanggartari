@@ -28,12 +28,16 @@ const TECH = [
 
 export default function AboutScreen() {
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['top','left','right']}>
       <View style={styles.header}>
         <Text style={styles.headerTitle}>ℹ️ Tentang Aplikasi</Text>
       </View>
 
-      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        style={{ flex: 1 }}
+        contentContainerStyle={styles.scroll}
+        showsVerticalScrollIndicator={false}
+      >
 
         {/* HERO LOGO */}
         <View style={styles.heroBox}>

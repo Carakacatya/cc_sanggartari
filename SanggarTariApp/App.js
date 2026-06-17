@@ -11,6 +11,7 @@ import MapScreen    from './src/screens/MapScreen';
 import DetailScreen from './src/screens/DetailScreen';
 import InfoScreen   from './src/screens/InfoScreen';
 import AboutScreen  from './src/screens/AboutScreen';
+import InfoDetailScreen from './src/screens/InfoDetailScreen';
 
 const Tab   = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
@@ -29,6 +30,15 @@ function MapStack() {
     <Stack.Navigator screenOptions={{ headerShown: false }}>
       <Stack.Screen name="MapMain" component={MapScreen} />
       <Stack.Screen name="Detail"  component={DetailScreen} />
+    </Stack.Navigator>
+  );
+}
+
+function InfoStack() {                                          // ✅ stack baru
+  return (
+    <Stack.Navigator screenOptions={{ headerShown: false }}>
+      <Stack.Screen name="InfoMain"   component={InfoScreen} />
+      <Stack.Screen name="InfoDetail" component={InfoDetailScreen} />
     </Stack.Navigator>
   );
 }
@@ -70,7 +80,7 @@ function MainApp() {
       {/* ✅ Tab baru Info */}
       <Tab.Screen
         name="Info"
-        component={InfoScreen}
+        component={InfoStack}
         options={{
           tabBarLabel: 'Info',
           tabBarIcon: () => <Text style={{ fontSize:22, lineHeight:26 }}>🎪</Text>,
@@ -87,6 +97,8 @@ function MainApp() {
     </Tab.Navigator>
   );
 }
+
+
 
 export default function App() {
   const [showSplash, setShowSplash] = useState(true);

@@ -1,4 +1,4 @@
-export const GAS_URL = "https://script.google.com/macros/s/AKfycbzKUgrUtA16UXOYFm-rg69fqe2szp2QIUfoS5KdylCf_EK5wldJogO8u7cFuk0ppgou/exec";
+export const GAS_URL = "https://script.google.com/macros/s/AKfycbxNZO93KzrWfZ9uVJErbO74f09dp-D0IpU3DB1o5ewyFAcng38fFZi793VH2ZXX9oHk/exec";
 
 export const COLORS = {
   ink: '#12100e',
