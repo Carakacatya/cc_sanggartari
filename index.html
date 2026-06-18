@@ -1,0 +1,774 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Sanggar Tari Surabaya</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400;1,600&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+  <style>
+    :root {
+      --ink:    #12100e;
+      --paper:  #f7f2ea;
+      --warm:   #ede5d4;
+      --gold:   #b8860b;
+      --gold2:  #d4a017;
+      --rust:   #8b3a2a;
+      --sage:   #5a6e52;
+      --text:   #2d2520;
+      --muted:  #8a7968;
+      --border: rgba(184,134,11,0.18);
+      --shadow: 0 2px 16px rgba(18,16,14,0.07);
+      --r: 14px;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body { background: var(--paper); color: var(--text); font-family: 'Outfit', sans-serif; min-height: 100vh; overflow-x: hidden; }
+
+    /* GRAIN */
+    body::after { content:''; position:fixed; inset:0; pointer-events:none; z-index:9000;
+      background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)' opacity='0.03'/%3E%3C/svg%3E");
+      opacity:.4; }
+
+    /* ── HEADER ── */
+    header {
+      position:sticky; top:0; z-index:300;
+      background:rgba(247,242,234,0.94); backdrop-filter:blur(16px);
+      border-bottom:1px solid var(--border);
+      padding:0 2rem; height:62px;
+      display:flex; align-items:center; gap:1rem;
+    }
+    .logo { display:flex; align-items:baseline; gap:.4rem;
+      font-family:'Cormorant Garamond',serif; font-size:1.4rem; font-weight:700; color:var(--ink); }
+    .logo-dot { width:7px; height:7px; background:var(--gold2); border-radius:50%; margin-bottom:3px; flex-shrink:0; }
+    .logo em { font-style:italic; color:var(--gold); font-weight:400; }
+    .header-right { margin-left:auto; display:flex; align-items:center; gap:.75rem; }
+    .pill { background:var(--gold); color:#fff; border-radius:99px; font-size:.72rem; font-weight:700; padding:.18rem .6rem; }
+
+    /* ── HERO (compact) ── */
+    .hero {
+      position:relative; overflow:hidden;
+      padding:3.5rem 2rem 2.5rem; text-align:center;
+      background:linear-gradient(180deg, var(--paper) 0%, var(--warm) 100%);
+      border-bottom:1px solid var(--border);
+    }
+    .hero-deco { position:absolute; inset:0; pointer-events:none; overflow:hidden; }
+    .hero-deco svg { position:absolute; opacity:.05; }
+    .hero-deco svg:nth-child(1) { top:-60px; left:-80px; width:400px; }
+    .hero-deco svg:nth-child(2) { bottom:-80px; right:-60px; width:360px; transform:rotate(180deg); }
+    .hero-eyebrow { display:inline-flex; align-items:center; gap:.5rem;
+      font-size:.68rem; font-weight:700; letter-spacing:.14em; text-transform:uppercase;
+      color:var(--gold); margin-bottom:1rem; }
+    .hero-eyebrow::before,.hero-eyebrow::after { content:''; width:32px; height:1px; background:var(--gold); opacity:.5; }
+    .hero h1 { font-family:'Cormorant Garamond',serif; font-size:clamp(2.2rem,6vw,4.2rem);
+      font-weight:700; line-height:1.05; color:var(--ink); margin-bottom:.6rem; letter-spacing:-.02em; }
+    .hero h1 em { color:var(--gold); font-style:italic; }
+    .hero-sub { color:var(--muted); font-size:.95rem; max-width:460px; margin:0 auto 2rem; line-height:1.6; }
+
+    /* search */
+    .search-outer { max-width:500px; margin:0 auto 1.25rem; }
+    .search-box { display:flex; align-items:center; background:#fff; border:1.5px solid var(--border);
+      border-radius:10px; padding:0 1rem; gap:.5rem; box-shadow:var(--shadow); transition:border-color .2s; }
+    .search-box:focus-within { border-color:var(--gold2); }
+    .search-box input { flex:1; background:none; border:none; outline:none; padding:.75rem 0;
+      font-family:'Outfit',sans-serif; font-size:.92rem; color:var(--text); }
+    .search-box input::placeholder { color:var(--muted); }
+
+    /* filters */
+    .filters { display:flex; flex-wrap:wrap; gap:.4rem; justify-content:center; margin-bottom:.75rem; }
+    .fbtn { background:#fff; border:1.5px solid var(--border); color:var(--muted); border-radius:99px;
+      padding:.32rem 1rem; font-size:.78rem; font-weight:500; cursor:pointer; font-family:'Outfit',sans-serif; transition:all .18s; }
+    .fbtn:hover { border-color:var(--gold2); color:var(--gold); }
+    .fbtn.active { background:var(--ink); border-color:var(--ink); color:#fff; font-weight:600; }
+
+    /* stats */
+    .stats { display:flex; justify-content:center; gap:2.5rem; padding:.5rem 0 .25rem; }
+    .stat { text-align:center; }
+    .stat-n { font-family:'Cormorant Garamond',serif; font-size:1.9rem; font-weight:700; color:var(--ink); line-height:1; }
+    .stat-l { font-size:.68rem; font-weight:500; color:var(--muted); text-transform:uppercase; letter-spacing:.1em; }
+    .stat-div { width:1px; background:var(--border); }
+
+    /* ── MAIN LAYOUT: MAP kiri, LIST kanan ── */
+    .app-body {
+      display:grid;
+      grid-template-columns: 1fr 420px;
+      gap:0;
+      height: calc(100vh - 62px);
+      overflow: hidden;
+    }
+
+    /* ── MAP PANEL (kiri) ── */
+    .map-panel {
+      position:relative;
+      border-right:1px solid var(--border);
+    }
+    #leafletMap {
+      width:100%; height:100%;
+    }
+    /* Map overlay info */
+    .map-overlay-title {
+      position:absolute; top:1rem; left:1rem; z-index:400;
+      background:rgba(247,242,234,0.95); backdrop-filter:blur(10px);
+      border:1px solid var(--border); border-radius:10px;
+      padding:.5rem .9rem;
+      font-family:'Cormorant Garamond',serif; font-size:1rem; font-weight:700; color:var(--ink);
+    }
+    .map-locate-btn {
+      position:absolute; bottom:1.5rem; right:1rem; z-index:400;
+      background:#fff; border:1.5px solid var(--border); border-radius:10px;
+      padding:.55rem .9rem; font-size:.8rem; font-weight:600; color:var(--text);
+      cursor:pointer; font-family:'Outfit',sans-serif; box-shadow:var(--shadow);
+      display:flex; align-items:center; gap:.4rem; transition:all .2s;
+    }
+    .map-locate-btn:hover { background:var(--gold); color:#fff; border-color:var(--gold); }
+    .user-marker-pulse {
+      width:16px; height:16px; background:#2563eb; border:3px solid #fff;
+      border-radius:50%; box-shadow:0 0 0 6px rgba(37,99,235,.2);
+      animation:pulse 2s infinite;
+    }
+    @keyframes pulse { 0%,100%{box-shadow:0 0 0 6px rgba(37,99,235,.15);} 50%{box-shadow:0 0 0 12px rgba(37,99,235,.05);} }
+
+    /* ── LIST PANEL (kanan) ── */
+    .list-panel {
+      display:flex; flex-direction:column;
+      overflow:hidden; background:var(--paper);
+    }
+    .list-header {
+      padding:1rem 1.25rem .75rem;
+      border-bottom:1px solid var(--border);
+      flex-shrink:0;
+    }
+    .list-header-top { display:flex; align-items:center; justify-content:space-between; margin-bottom:.6rem; }
+    .list-title { font-family:'Cormorant Garamond',serif; font-size:1.1rem; font-weight:700; color:var(--ink); }
+    .list-count { font-size:.78rem; color:var(--muted); }
+
+    /* search dalam list panel */
+    .list-search { display:flex; align-items:center; background:#fff; border:1.5px solid var(--border);
+      border-radius:8px; padding:0 .75rem; gap:.4rem; transition:border-color .2s; }
+    .list-search:focus-within { border-color:var(--gold2); }
+    .list-search input { flex:1; background:none; border:none; outline:none; padding:.55rem 0;
+      font-family:'Outfit',sans-serif; font-size:.85rem; color:var(--text); }
+    .list-search input::placeholder { color:var(--muted); }
+
+    /* filter chips di list */
+    .list-filters { display:flex; gap:.35rem; overflow-x:auto; padding:.6rem 1.25rem;
+      border-bottom:1px solid var(--border); flex-shrink:0; scrollbar-width:none; }
+    .list-filters::-webkit-scrollbar { display:none; }
+    .chip { background:#fff; border:1.5px solid var(--border); color:var(--muted); border-radius:99px;
+      padding:.25rem .8rem; font-size:.74rem; font-weight:500; cursor:pointer; font-family:'Outfit',sans-serif;
+      white-space:nowrap; transition:all .15s; flex-shrink:0; }
+    .chip.active { background:var(--ink); border-color:var(--ink); color:#fff; font-weight:600; }
+    .chip:hover:not(.active) { border-color:var(--gold2); color:var(--gold); }
+
+    /* scrollable cards */
+    .list-scroll { flex:1; overflow-y:auto; padding:.75rem; scrollbar-width:thin;
+      scrollbar-color:var(--border) transparent; }
+    .list-scroll::-webkit-scrollbar { width:4px; }
+    .list-scroll::-webkit-scrollbar-thumb { background:var(--border); border-radius:4px; }
+
+    /* ── CARD (dalam list panel) ── */
+    .card {
+      background:#fff; border:1px solid rgba(0,0,0,.06);
+      border-radius:12px; overflow:hidden; cursor:pointer;
+      box-shadow:var(--shadow); margin-bottom:.75rem;
+      transition:transform .2s, box-shadow .2s, border-color .2s;
+      animation:rise .35s ease both;
+      display:flex; gap:0;
+    }
+    @keyframes rise { from{opacity:0;transform:translateY(12px);} to{opacity:1;transform:translateY(0);} }
+    .card:hover { transform:translateY(-2px); box-shadow:0 6px 24px rgba(18,16,14,.11); border-color:var(--gold); }
+    .card.highlighted { border-color:var(--gold2); box-shadow:0 0 0 2px var(--gold2), 0 6px 24px rgba(184,134,11,.15); }
+
+    .card-thumb {
+      width:100px; flex-shrink:0; position:relative; overflow:hidden;
+      background:var(--warm);
+    }
+    .card-thumb img { width:100%; height:100%; object-fit:cover; display:block; transition:transform .3s; }
+    .card:hover .card-thumb img { transform:scale(1.06); }
+    .card-placeholder-sm {
+      width:100%; height:100%; min-height:90px;
+      background:linear-gradient(135deg,var(--warm) 0%,#e0d4bc 100%);
+      display:flex; align-items:center; justify-content:center; font-size:1.8rem; opacity:.5;
+    }
+
+    .card-body { flex:1; padding:.75rem .9rem; min-width:0; }
+    .card-cat { font-size:.62rem; font-weight:700; letter-spacing:.1em; text-transform:uppercase; color:var(--gold); margin-bottom:.2rem; }
+    .card-name { font-family:'Cormorant Garamond',serif; font-size:.95rem; font-weight:700; color:var(--ink);
+      margin-bottom:.25rem; line-height:1.3; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .card-addr { font-size:.73rem; color:var(--muted); line-height:1.45; margin-bottom:.4rem;
+      display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+    .card-bottom { display:flex; align-items:center; gap:.4rem; }
+    .card-phone { font-size:.7rem; color:var(--muted); flex:1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .btn-route {
+      background:var(--ink); color:#fff; border:none; border-radius:6px;
+      padding:.28rem .65rem; font-size:.7rem; font-weight:700; cursor:pointer;
+      font-family:'Outfit',sans-serif; white-space:nowrap; text-decoration:none;
+      transition:background .2s; flex-shrink:0;
+    }
+    .btn-route:hover { background:var(--gold); }
+
+    /* ── STATES ── */
+    .loading-state,.empty-state { text-align:center; padding:3rem 1rem; color:var(--muted); }
+    .spinner { width:36px; height:36px; border:3px solid var(--border); border-top-color:var(--gold2);
+      border-radius:50%; animation:spin .75s linear infinite; margin:0 auto .75rem; }
+    @keyframes spin { to{transform:rotate(360deg);} }
+
+    /* ── MODAL DETAIL ── */
+    .overlay { display:none; position:fixed; inset:0; z-index:600;
+      background:rgba(18,16,14,.6); backdrop-filter:blur(8px);
+      align-items:center; justify-content:center; padding:1.5rem; }
+    .overlay.open { display:flex; }
+    .modal {
+      background:var(--paper); border-radius:20px; max-width:680px; width:100%;
+      max-height:92vh; overflow-y:auto; position:relative;
+      box-shadow:0 24px 80px rgba(0,0,0,.25);
+      animation:modalIn .3s cubic-bezier(.34,1.2,.64,1);
+    }
+    @keyframes modalIn { from{opacity:0;transform:scale(.92) translateY(20px);} to{opacity:1;transform:scale(1) translateY(0);} }
+    .modal-close {
+      position:sticky; top:1rem; float:right; margin:1rem 1rem 0 0;
+      background:rgba(18,16,14,.08); border:none; width:34px; height:34px; border-radius:8px;
+      cursor:pointer; font-size:1rem; color:var(--text); display:flex; align-items:center; justify-content:center;
+      transition:background .2s; z-index:10;
+    }
+    .modal-close:hover { background:var(--ink); color:#fff; }
+
+    /* gallery */
+    .modal-gallery { width:100%; height:260px; overflow:hidden; border-radius:20px 20px 0 0; display:flex; gap:2px; }
+    .modal-gallery-main { flex:1; overflow:hidden; }
+    .modal-gallery-main img { width:100%; height:100%; object-fit:cover; display:block; }
+    .modal-gallery-side { display:flex; flex-direction:column; width:100px; gap:2px; }
+    .modal-gallery-side .gthumb { flex:1; overflow:hidden; }
+    .modal-gallery-side .gthumb img { width:100%; height:100%; object-fit:cover; display:block; transition:opacity .2s; }
+    .modal-gallery-side .gthumb:hover img { opacity:.8; }
+    .modal-no-img { width:100%; height:220px; background:linear-gradient(135deg,var(--warm) 0%,#e0d4bc 100%);
+      display:flex; flex-direction:column; align-items:center; justify-content:center; gap:.6rem;
+      border-radius:20px 20px 0 0; }
+    .modal-no-img-ico { font-size:3.5rem; opacity:.3; }
+    .modal-no-img-txt { font-size:.78rem; color:var(--muted); font-style:italic; }
+
+    .modal-body { padding:1.5rem 1.75rem 2rem; }
+    .modal-tag { font-size:.68rem; font-weight:700; letter-spacing:.13em; text-transform:uppercase; color:var(--gold); margin-bottom:.5rem; }
+    .modal-name { font-family:'Cormorant Garamond',serif; font-size:1.7rem; font-weight:700; color:var(--ink);
+      margin-bottom:1.1rem; line-height:1.15; }
+    .modal-info-grid { display:grid; grid-template-columns:1fr 1fr; gap:.55rem .75rem; margin-bottom:1.25rem; }
+    .irow { display:flex; gap:.5rem; align-items:flex-start; }
+    .iico { font-size:.95rem; flex-shrink:0; margin-top:.05rem; }
+    .igrp { flex:1; }
+    .ikey { font-size:.65rem; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:var(--muted); margin-bottom:.1rem; }
+    .ival { font-size:.82rem; color:var(--text); line-height:1.5; }
+
+    /* jam buka */
+    .modal-jam { background:var(--warm); border-radius:10px; padding:.8rem 1rem; margin-bottom:1.25rem; }
+    .jam-title { font-size:.67rem; font-weight:700; letter-spacing:.1em; text-transform:uppercase; color:var(--muted); margin-bottom:.5rem; }
+    .jam-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(130px,1fr)); gap:.3rem; }
+    .jam-row { display:flex; justify-content:space-between; font-size:.76rem; }
+    .jam-day { color:var(--muted); }
+    .jam-time { font-weight:600; color:var(--ink); }
+    .jam-time.tutup { color:var(--rust); font-weight:500; }
+    .jam-time.nonstop { color:var(--sage); }
+
+    .modal-desc { font-size:.86rem; color:var(--muted); line-height:1.75; font-style:italic;
+      border-top:1px solid var(--border); padding-top:1.1rem; margin-bottom:1.25rem; }
+    .modal-nodesc { font-size:.8rem; color:#bbb; font-style:italic;
+      border-top:1px solid var(--border); padding-top:.9rem; margin-bottom:1.25rem; }
+
+    /* MAP MINI di dalam modal */
+    .modal-map-section { margin-bottom:1.25rem; }
+    .modal-map-label { font-size:.67rem; font-weight:700; letter-spacing:.1em; text-transform:uppercase;
+      color:var(--muted); margin-bottom:.5rem; }
+    #modalMiniMap { width:100%; height:200px; border-radius:10px; border:1px solid var(--border);
+      overflow:hidden; z-index:1; }
+
+    .modal-actions { display:flex; gap:.65rem; flex-wrap:wrap; }
+    .btn-primary { background:var(--ink); color:var(--paper); border:none; border-radius:10px;
+      padding:.65rem 1.4rem; font-size:.86rem; font-weight:600; cursor:pointer;
+      font-family:'Outfit',sans-serif; text-decoration:none; display:inline-block; transition:background .2s; }
+    .btn-primary:hover { background:var(--gold); }
+    .btn-outline { background:transparent; border:1.5px solid rgba(0,0,0,.15); color:var(--text);
+      border-radius:10px; padding:.63rem 1.3rem; font-size:.86rem; cursor:pointer;
+      font-family:'Outfit',sans-serif; text-decoration:none; display:inline-block; transition:all .2s; }
+    .btn-outline:hover { border-color:var(--gold); color:var(--gold); }
+
+    /* Leaflet popup */
+    .leaflet-popup-content-wrapper { background:#fff !important; border-radius:12px !important;
+      box-shadow:0 8px 28px rgba(0,0,0,.14) !important; border:1px solid var(--border) !important; padding:0 !important; }
+    .leaflet-popup-tip { background:#fff !important; }
+    .leaflet-popup-content { margin:0 !important; padding:.85rem 1rem !important; min-width:180px; }
+    .pop-name { font-family:'Cormorant Garamond',serif; font-size:.95rem; font-weight:700; color:var(--ink); margin-bottom:.25rem; }
+    .pop-addr { font-size:.74rem; color:var(--muted); margin-bottom:.6rem; line-height:1.4; }
+    .pop-acts { display:flex; gap:.4rem; }
+    .pop-btn { background:var(--ink); color:#fff; border:none; border-radius:6px;
+      padding:.3rem .65rem; font-size:.72rem; font-weight:700; cursor:pointer; font-family:'Outfit',sans-serif; }
+    .pop-btn:hover { background:var(--gold); }
+    .pop-btn-o { background:transparent; border:1.5px solid var(--border); color:var(--text);
+      border-radius:6px; padding:.28rem .65rem; font-size:.72rem; cursor:pointer;
+      font-family:'Outfit',sans-serif; text-decoration:none; transition:all .2s; }
+    .pop-btn-o:hover { border-color:var(--gold); color:var(--gold); }
+
+    /* TOAST */
+    #toast { position:fixed; bottom:1.5rem; left:50%; transform:translateX(-50%);
+      background:var(--ink); color:var(--paper); padding:.65rem 1.3rem; border-radius:10px;
+      font-size:.82rem; font-weight:500; z-index:9999; opacity:0; pointer-events:none;
+      transition:opacity .3s; white-space:nowrap; }
+    #toast.show { opacity:1; }
+
+    /* FOOTER */
+    footer { text-align:center; padding:1.5rem; border-top:1px solid var(--border);
+      color:var(--muted); font-size:.76rem; background:var(--warm); }
+    footer strong { color:var(--gold); }
+
+    /* RESPONSIVE */
+    @media(max-width:900px){
+      .app-body { grid-template-columns:1fr; grid-template-rows:340px 1fr; height:auto; overflow:visible; }
+      .map-panel { border-right:none; border-bottom:1px solid var(--border); }
+      #leafletMap { height:340px; }
+      .list-panel { height:auto; min-height:400px; }
+    }
+    @media(max-width:600px){
+      .hero { padding:2.5rem 1.25rem 2rem; }
+      .modal-info-grid { grid-template-columns:1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header>
+  <div class="logo">
+    <div class="logo-dot"></div>
+    Sanggar<em>Tari</em>&nbsp;Surabaya
+  </div>
+  <div class="header-right">
+    <span class="pill" id="pillCount">—</span>
+  </div>
+</header>
+
+<!-- HERO (compact) -->
+<section class="hero">
+  <div class="hero-deco">
+    <svg viewBox="0 0 400 400" fill="none" stroke="#b8860b" stroke-width="1" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="200" cy="200" r="180"/><circle cx="200" cy="200" r="130"/><circle cx="200" cy="200" r="80"/>
+      <line x1="20" y1="200" x2="380" y2="200"/><line x1="200" y1="20" x2="200" y2="380"/>
+      <line x1="55" y1="55" x2="345" y2="345"/><line x1="345" y1="55" x2="55" y2="345"/>
+    </svg>
+    <svg viewBox="0 0 400 400" fill="none" stroke="#b8860b" stroke-width="1" xmlns="http://www.w3.org/2000/svg">
+      <polygon points="200,20 380,380 20,380"/><polygon points="200,60 340,340 60,340"/><polygon points="200,100 300,300 100,300"/>
+    </svg>
+  </div>
+  <div class="hero-eyebrow">Direktori Budaya · Kota Surabaya</div>
+  <h1>Temukan <em>Sanggar Tari</em></h1>
+  <p class="hero-sub">Direktori lengkap sanggar tari, studio seni, dan akademi budaya di Surabaya — lengkap dengan peta dan rute.</p>
+
+  <div class="search-outer">
+    <div class="search-box">
+      <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" style="color:var(--muted);flex-shrink:0"><circle cx="6.5" cy="6.5" r="4.5"/><path d="M10.5 10.5l3 3" stroke-linecap="round"/></svg>
+      <input type="text" id="searchInput" placeholder="Cari nama sanggar atau alamat..." oninput="applyFilters()"/>
+    </div>
+  </div>
+  <div class="filters" id="heroFilters">
+    <button class="fbtn active" onclick="setFilter('Semua',this)">Semua</button>
+    <button class="fbtn" onclick="setFilter('Sanggar Tari',this)">Sanggar Tari</button>
+    <button class="fbtn" onclick="setFilter('Studio',this)">Studio</button>
+    <button class="fbtn" onclick="setFilter('Akademi',this)">Akademi</button>
+    <button class="fbtn" onclick="setFilter('Sekolah',this)">Sekolah</button>
+    <button class="fbtn" onclick="setFilter('Lainnya',this)">Lainnya</button>
+  </div>
+  <div class="stats">
+    <div class="stat"><div class="stat-n" id="statTotal">—</div><div class="stat-l">Total</div></div>
+    <div class="stat-div"></div>
+    <div class="stat"><div class="stat-n" id="statShowing">—</div><div class="stat-l">Tampil</div></div>
+    <div class="stat-div"></div>
+    <div class="stat"><div class="stat-n">10+</div><div class="stat-l">Kecamatan</div></div>
+  </div>
+</section>
+
+<!-- ── APP BODY: MAP + LIST BERDAMPINGAN ── -->
+<div class="app-body">
+
+  <!-- MAP PANEL (kiri) -->
+  <div class="map-panel">
+    <div class="map-overlay-title">🗺️ Peta Sanggar Tari Surabaya</div>
+    <div id="leafletMap"></div>
+    <button class="map-locate-btn" id="locateBtn" onclick="locateUser()">
+      📍 Lokasi Saya
+    </button>
+  </div>
+
+  <!-- LIST PANEL (kanan) -->
+  <div class="list-panel">
+    <div class="list-header">
+      <div class="list-header-top">
+        <span class="list-title">Daftar Sanggar</span>
+        <span class="list-count" id="listCount">Memuat…</span>
+      </div>
+      <div class="list-search">
+        <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" style="color:var(--muted);flex-shrink:0"><circle cx="6.5" cy="6.5" r="4.5"/><path d="M10.5 10.5l3 3" stroke-linecap="round"/></svg>
+        <input type="text" id="searchInput2" placeholder="Cari sanggar…" oninput="applyFilters2()"/>
+      </div>
+    </div>
+    <div class="list-filters" id="listFilters">
+      <div class="chip active" onclick="setFilter2('Semua',this)">Semua</div>
+      <div class="chip" onclick="setFilter2('Sanggar Tari',this)">Sanggar Tari</div>
+      <div class="chip" onclick="setFilter2('Studio',this)">Studio</div>
+      <div class="chip" onclick="setFilter2('Akademi',this)">Akademi</div>
+      <div class="chip" onclick="setFilter2('Sekolah',this)">Sekolah</div>
+      <div class="chip" onclick="setFilter2('Lainnya',this)">Lainnya</div>
+    </div>
+    <div class="list-scroll" id="cardList">
+      <div class="loading-state"><div class="spinner"></div><p>Memuat data…</p></div>
+    </div>
+  </div>
+</div>
+
+<!-- FOOTER -->
+<footer>
+  Mata Kuliah <strong>Cloud Computing</strong> &nbsp;·&nbsp; Direktori Sanggar Tari Surabaya &nbsp;·&nbsp;
+  Backend: <strong>Google Apps Script</strong> &nbsp;·&nbsp; DB: <strong>Google Sheets</strong>
+</footer>
+
+<!-- MODAL DETAIL -->
+<div class="overlay" id="overlay" onclick="closeOutside(event)">
+  <div class="modal" id="modal">
+    <button class="modal-close" onclick="closeModal()">✕</button>
+    <div id="modalInner"></div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+// ════════════════════════════════════════════════
+// KONFIGURASI
+// ════════════════════════════════════════════════
+const GAS_URL = "https://script.google.com/macros/s/AKfycbzP7798YIE35U0sDOsdZASdPzt4T-HffvOiQG_T5e3Z14ToVVa3QshZngysjIt1cYg/exec";
+
+// ════════════════════════════════════════════════
+// STATE
+// ════════════════════════════════════════════════
+let allData = [], filtered = [];
+let activeFilter = 'Semua';
+let leafMap = null, mapMarkers = [], userMarker = null;
+let miniMap = null;
+
+// ════════════════════════════════════════════════
+// INIT MAP (langsung saat halaman load)
+// ════════════════════════════════════════════════
+function initMap() {
+  leafMap = L.map('leafletMap', { zoomControl: true }).setView([-7.2906, 112.7369], 12);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '© OpenStreetMap', maxZoom: 19
+  }).addTo(leafMap);
+}
+
+// ════════════════════════════════════════════════
+// FETCH DATA DARI GAS
+// ════════════════════════════════════════════════
+async function fetchData() {
+  try {
+    const r = await fetch(`${GAS_URL}?action=getAll`);
+    const j = await r.json();
+    if (j.status === 'ok') {
+      initData(j.data);
+    } else {
+      loadFallback("GAS error: " + j.message);
+    }
+  } catch(e) {
+    loadFallback("GAS belum dapat diakses — menampilkan preview data");
+  }
+}
+
+function initData(data) {
+  allData = data;
+  filtered = [...data];
+  document.getElementById('statTotal').textContent = data.length;
+  document.getElementById('statShowing').textContent = data.length;
+  document.getElementById('pillCount').textContent = data.length;
+  document.getElementById('listCount').textContent = data.length + ' sanggar';
+  renderCards(filtered);
+  renderMapMarkers(filtered);
+}
+
+// ════════════════════════════════════════════════
+// FALLBACK DATA
+// ════════════════════════════════════════════════
+function loadFallback(msg) {
+  console.warn(msg);
+  initData([
+    {id:1,nama:"Sanggar Tari Sekar Tunjung",alamat:"Jl. Simo Katrungan Kidul No.33, Banyu Urip, Sawahan, Surabaya",telepon:"0821-4367-5609",latitude:-7.2706115,longitude:112.7141571,deskripsi:"",jam_buka:"Senin 09.00-20.00 | Selasa 09.00-20.00 | Rabu 09.00-20.00 | Kamis 09.00-20.00 | Jumat 09.00-20.00 | Sabtu 12.00-21.00 | Minggu Buka 24 jam",foto:"",link_maps:"https://www.google.com/maps?q=-7.2706115,112.7141571"},
+    {id:2,nama:"Marlupi Dance Academy Ngagel",alamat:"Jl. Ngagel Jaya Tengah No.2, Pucang Sewu, Gubeng, Surabaya",telepon:"0813-3535-1580",latitude:-7.2914482,longitude:112.7528804,deskripsi:"",jam_buka:"Senin 15.00-19.30 | Selasa 15.00-19.30 | Rabu 15.00-19.30 | Kamis 15.00-19.30 | Jumat 15.00-19.30 | Sabtu 09.00-15.00 | Minggu Tutup",foto:"",link_maps:"https://www.google.com/maps?q=-7.2914482,112.7528804"},
+    {id:3,nama:"Sanggar Tari Arbaya",alamat:"Jl. Gubernur Suryo No.11, Embong Kaliasin, Genteng, Surabaya",telepon:"0896-9029-4600",latitude:-7.2637474,longitude:112.7448196,deskripsi:"",jam_buka:"Senin 08.00-21.00 | Selasa 08.00-21.00 | Rabu 08.00-21.00 | Kamis 08.00-21.00 | Jumat 08.00-21.00 | Sabtu 08.00-21.00 | Minggu Tutup",foto:"",link_maps:"https://www.google.com/maps?q=-7.2637474,112.7448196"},
+    {id:4,nama:"Tydif Studio",alamat:"Jl. Simo Gn. Barat I No.15, Simomulyo, Sukomanunggal, Surabaya",telepon:"0813-5716-7857",latitude:-7.2701909,longitude:112.7103556,deskripsi:"",jam_buka:"Senin 09.00-21.00 | Selasa 09.00-21.00 | Rabu 09.00-21.00 | Kamis 09.00-21.00 | Jumat 09.00-21.00 | Sabtu 09.00-21.00 | Minggu 09.00-21.00",foto:"",link_maps:"https://www.google.com/maps?q=-7.2701909,112.7103556"},
+    {id:5,nama:"Sanggar Tari Mulyojoyo Enterprise",alamat:"Jl. Tambak Medokan Ayu Gg. II No.100, Medokan Ayu, Rungkut, Surabaya",telepon:"0813-5153-1006",latitude:-7.3263975,longitude:112.7995633,deskripsi:"",jam_buka:"Senin 08.00-21.00 | Selasa 08.00-21.00 | Rabu 08.00-21.00 | Kamis 08.00-21.00 | Jumat 08.00-21.00 | Sabtu 08.00-21.00 | Minggu 08.00-21.00",foto:"",link_maps:"https://www.google.com/maps?q=-7.3263975,112.7995633"},
+    {id:6,nama:"Dojo Ngagel Surabaya",alamat:"Ngagel Madya, Baratajaya, Gubeng, Surabaya",telepon:"0878-5451-7771",latitude:-7.2888427,longitude:112.7598657,deskripsi:"",jam_buka:"Senin 07.00-22.00 | Selasa 07.00-22.00 | Rabu 07.00-22.00 | Kamis 07.00-22.00 | Jumat 07.00-22.00 | Sabtu 07.00-22.00 | Minggu 07.00-22.00",foto:"",link_maps:"https://www.google.com/maps?q=-7.2888427,112.7598657"},
+  ]);
+  showToast("⚠️ Preview mode — sambungkan GAS untuk data lengkap");
+}
+
+// ════════════════════════════════════════════════
+// RENDER CARDS (list panel kanan)
+// ════════════════════════════════════════════════
+function renderCards(data) {
+  const el = document.getElementById('cardList');
+  if (!data.length) {
+    el.innerHTML = `<div class="empty-state"><div style="font-size:2.5rem;opacity:.3">🎭</div><p style="margin-top:.5rem;font-size:.88rem">Tidak ada hasil.</p></div>`;
+    return;
+  }
+  el.innerHTML = data.map((d, i) => {
+    const fotos = getFotos(d.foto);
+    const cat = getCat(d.nama);
+    const thumbHtml = fotos[0]
+      ? `<div class="card-thumb"><img src="${fotos[0]}" alt="${d.nama}" loading="lazy"
+           onerror="this.parentElement.innerHTML='<div class=\\'card-placeholder-sm\\'>🎭</div>'"/></div>`
+      : `<div class="card-thumb"><div class="card-placeholder-sm">🎭</div></div>`;
+    return `<div class="card" id="card-${d.id}" style="animation-delay:${Math.min(i,15)*0.04}s" onclick="openModal(${d.id})">
+      ${thumbHtml}
+      <div class="card-body">
+        <div class="card-cat">${cat}</div>
+        <div class="card-name">${d.nama}</div>
+        <div class="card-addr">📍 ${d.alamat||'—'}</div>
+        <div class="card-bottom">
+          <span class="card-phone">${d.telepon?'📞 '+d.telepon:''}</span>
+          ${d.link_maps?`<a class="btn-route" href="${d.link_maps}" target="_blank" onclick="event.stopPropagation()">Maps ↗</a>`:''}
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ════════════════════════════════════════════════
+// RENDER MAP MARKERS
+// ════════════════════════════════════════════════
+function renderMapMarkers(data) {
+  if (!leafMap) return;
+  mapMarkers.forEach(m => leafMap.removeLayer(m));
+  mapMarkers = [];
+
+  const icon = L.divIcon({
+    html:`<div style="width:26px;height:26px;background:#b8860b;border:3px solid #fff;border-radius:50% 50% 50% 0;transform:rotate(-45deg);box-shadow:0 2px 8px rgba(0,0,0,.3);"></div>`,
+    iconSize:[26,26], iconAnchor:[13,26], popupAnchor:[0,-28], className:''
+  });
+
+  data.forEach(d => {
+    if (!d.latitude || !d.longitude) return;
+    const m = L.marker([+d.latitude, +d.longitude], {icon})
+      .addTo(leafMap)
+      .bindPopup(`
+        <div class="pop-name">${d.nama}</div>
+        <div class="pop-addr">📍 ${(d.alamat||'').substring(0,60)}…</div>
+        <div class="pop-acts">
+          <button class="pop-btn" onclick="openModal(${d.id})">Detail</button>
+          <a class="pop-btn-o" href="https://www.google.com/maps/dir/?api=1&destination=${d.latitude},${d.longitude}" target="_blank">🧭 Rute</a>
+          ${d.link_maps?`<a class="pop-btn-o" href="${d.link_maps}" target="_blank">Maps</a>`:''}
+        </div>`);
+    // Klik marker → highlight card di list
+    m.on('click', () => highlightCard(d.id));
+    mapMarkers.push(m);
+  });
+}
+
+function highlightCard(id) {
+  document.querySelectorAll('.card').forEach(c => c.classList.remove('highlighted'));
+  const el = document.getElementById('card-'+id);
+  if (el) {
+    el.classList.add('highlighted');
+    el.scrollIntoView({behavior:'smooth', block:'nearest'});
+  }
+}
+
+// ════════════════════════════════════════════════
+// LOKASI USER (GPS)
+// ════════════════════════════════════════════════
+function locateUser() {
+  if (!navigator.geolocation) { showToast("❌ Browser tidak mendukung GPS"); return; }
+  showToast("📍 Mencari lokasi kamu…");
+  navigator.geolocation.getCurrentPosition(
+    pos => {
+      const {latitude:lat, longitude:lng} = pos.coords;
+      if (userMarker) leafMap.removeLayer(userMarker);
+      const userIcon = L.divIcon({
+        html:`<div class="user-marker-pulse"></div>`,
+        iconSize:[16,16], iconAnchor:[8,8], className:''
+      });
+      userMarker = L.marker([lat,lng], {icon:userIcon}).addTo(leafMap)
+        .bindPopup('<b>📍 Lokasi Kamu</b>').openPopup();
+      leafMap.flyTo([lat,lng], 14, {duration:1.2});
+      showToast("✅ Lokasi ditemukan!");
+    },
+    err => {
+      showToast("❌ Izin GPS ditolak atau tidak tersedia");
+    }
+  );
+}
+
+// ════════════════════════════════════════════════
+// MODAL DETAIL + MINI MAP
+// ════════════════════════════════════════════════
+function openModal(id) {
+  const d = allData.find(x => +x.id === +id);
+  if (!d) return;
+
+  const fotos = getFotos(d.foto);
+  let galleryHtml;
+  if (fotos.length >= 2) {
+    const thumbs = fotos.slice(1,4).map(f =>
+      `<div class="gthumb"><img src="${f}" alt="" onerror="this.parentElement.style.display='none'"/></div>`
+    ).join('');
+    galleryHtml = `<div class="modal-gallery">
+      <div class="modal-gallery-main"><img src="${fotos[0]}" alt="${d.nama}" onerror="this.src=''"/></div>
+      <div class="modal-gallery-side">${thumbs}</div>
+    </div>`;
+  } else if (fotos.length === 1) {
+    galleryHtml = `<div class="modal-gallery"><div class="modal-gallery-main"><img src="${fotos[0]}" alt="${d.nama}"/></div></div>`;
+  } else {
+    galleryHtml = `<div class="modal-no-img"><div class="modal-no-img-ico">🎭</div><div class="modal-no-img-txt">Foto belum tersedia</div></div>`;
+  }
+
+  const descHtml = d.deskripsi
+    ? `<div class="modal-desc">${d.deskripsi}</div>`
+    : `<div class="modal-nodesc">Deskripsi belum tersedia untuk sanggar ini.</div>`;
+
+  document.getElementById('modalInner').innerHTML = `
+    ${galleryHtml}
+    <div class="modal-body">
+      <div class="modal-tag">${getCat(d.nama)}</div>
+      <div class="modal-name">${d.nama}</div>
+      <div class="modal-info-grid">
+        <div class="irow"><span class="iico">📍</span><div class="igrp"><div class="ikey">Alamat</div><div class="ival">${d.alamat||'—'}</div></div></div>
+        <div class="irow"><span class="iico">📞</span><div class="igrp"><div class="ikey">Telepon</div><div class="ival">${d.telepon||'—'}</div></div></div>
+        <div class="irow"><span class="iico">🏷️</span><div class="igrp"><div class="ikey">Kategori</div><div class="ival">${getCat(d.nama)}</div></div></div>
+        <div class="irow"><span class="iico">🌐</span><div class="igrp"><div class="ikey">Koordinat</div><div class="ival">${d.latitude}, ${d.longitude}</div></div></div>
+      </div>
+      ${buildJamHtml(d.jam_buka)}
+      ${descHtml}
+      <div class="modal-map-section">
+        <div class="modal-map-label">📍 Lokasi di Peta</div>
+        <div id="modalMiniMap"></div>
+      </div>
+      <div class="modal-actions">
+        ${d.link_maps?`<a class="btn-primary" href="${d.link_maps}" target="_blank">🗺️ Buka Google Maps</a>`:''}
+        ${d.latitude?`<a class="btn-outline" href="https://www.google.com/maps/dir/?api=1&destination=${d.latitude},${d.longitude}" target="_blank">🧭 Rute ke Sini</a>`:''}
+        ${d.telepon?`<a class="btn-outline" href="tel:${d.telepon}">📞 Hubungi</a>`:''}
+      </div>
+    </div>`;
+
+  document.getElementById('overlay').classList.add('open');
+
+  // Render mini map di modal
+  setTimeout(() => {
+    if (miniMap) { miniMap.remove(); miniMap = null; }
+    if (d.latitude && d.longitude) {
+      miniMap = L.map('modalMiniMap', {zoomControl:false, scrollWheelZoom:false, dragging:false})
+        .setView([+d.latitude, +d.longitude], 15);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {maxZoom:19}).addTo(miniMap);
+      const icon = L.divIcon({
+        html:`<div style="width:22px;height:22px;background:#b8860b;border:3px solid #fff;border-radius:50% 50% 50% 0;transform:rotate(-45deg);box-shadow:0 2px 6px rgba(0,0,0,.3);"></div>`,
+        iconSize:[22,22], iconAnchor:[11,22], className:''
+      });
+      L.marker([+d.latitude, +d.longitude], {icon}).addTo(miniMap);
+    }
+  }, 150);
+}
+
+function closeModal() {
+  document.getElementById('overlay').classList.remove('open');
+  if (miniMap) { miniMap.remove(); miniMap = null; }
+}
+function closeOutside(e) { if(e.target===document.getElementById('overlay')) closeModal(); }
+document.addEventListener('keydown', e => { if(e.key==='Escape') closeModal(); });
+
+// ════════════════════════════════════════════════
+// SEARCH & FILTER
+// ════════════════════════════════════════════════
+function setFilter(cat, btn) {
+  activeFilter = cat;
+  document.querySelectorAll('#heroFilters .fbtn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  // Sync chip di list
+  document.querySelectorAll('#listFilters .chip').forEach(c => {
+    c.classList.toggle('active', c.textContent === cat);
+  });
+  applyFilters();
+}
+
+function setFilter2(cat, chip) {
+  activeFilter = cat;
+  document.querySelectorAll('#listFilters .chip').forEach(c => c.classList.remove('active'));
+  chip.classList.add('active');
+  document.querySelectorAll('#heroFilters .fbtn').forEach(b => {
+    b.classList.toggle('active', b.textContent === cat);
+  });
+  applyFilters();
+}
+
+function applyFilters() {
+  const q = (document.getElementById('searchInput').value||'').toLowerCase();
+  runFilter(q);
+}
+function applyFilters2() {
+  const q = (document.getElementById('searchInput2').value||'').toLowerCase();
+  runFilter(q);
+}
+
+function runFilter(q) {
+  filtered = allData.filter(d => {
+    const okS = !q || (d.nama||'').toLowerCase().includes(q) || (d.alamat||'').toLowerCase().includes(q);
+    const okC = activeFilter==='Semua' || getCat(d.nama)===activeFilter;
+    return okS && okC;
+  });
+  document.getElementById('statShowing').textContent = filtered.length;
+  document.getElementById('pillCount').textContent = filtered.length;
+  document.getElementById('listCount').textContent = filtered.length + ' sanggar';
+  renderCards(filtered);
+  renderMapMarkers(filtered);
+}
+
+// ════════════════════════════════════════════════
+// HELPERS
+// ════════════════════════════════════════════════
+function getFotos(raw) {
+  if (!raw) return [];
+  return raw.split('|').map(s => s.trim()).filter(Boolean);
+}
+
+function getCat(nama) {
+  const n = (nama||'').toLowerCase();
+  if (n.includes('akademi')||n.includes('academy')) return 'Akademi';
+  if (n.includes('studio')) return 'Studio';
+  if (n.includes('sekolah')||n.includes('school')) return 'Sekolah';
+  if (n.includes('sanggar')) return 'Sanggar Tari';
+  return 'Lainnya';
+}
+
+function buildJamHtml(raw) {
+  if (!raw) return '';
+  const days = ['Senin','Selasa','Rabu','Kamis','Jumat','Sabtu','Minggu'];
+  const rows = [];
+  days.forEach(day => {
+    const rx = new RegExp(day + '[^|]*?(\\d{2}[.:.]\\d{2}[–\\-]\\d{2}[.:.]\\d{2}|Buka 24 jam|Tutup)', 'i');
+    const m = raw.match(rx);
+    if (m) {
+      const t = m[1];
+      const cls = t==='Tutup'?'tutup':t.includes('24')?'nonstop':'';
+      rows.push(`<div class="jam-row"><span class="jam-day">${day}</span><span class="jam-time ${cls}">${t.replace('Buka 24 jam','24 jam')}</span></div>`);
+    }
+  });
+  if (!rows.length) return `<div class="modal-jam"><div class="jam-title">⏰ Jam Operasional</div><div style="font-size:.8rem;color:var(--muted)">${raw.substring(0,120)}</div></div>`;
+  return `<div class="modal-jam"><div class="jam-title">⏰ Jam Operasional</div><div class="jam-grid">${rows.join('')}</div></div>`;
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3500);
+}
+
+// ════════════════════════════════════════════════
+// BOOT
+// ════════════════════════════════════════════════
+initMap();
+fetchData();
+</script>
+</body>
+</html>
