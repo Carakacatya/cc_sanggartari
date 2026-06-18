@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # 🎭 SanggarTari Surabaya
 
 Direktori budaya mobile untuk menemukan sanggar tari, studio seni, dan akademi budaya di Kota Surabaya — lengkap dengan peta interaktif, rute navigasi, dan info pagelaran/acara seni terkini.
@@ -183,3 +184,6 @@ SanggarTariApp/
   Dibuat untuk tugas Mata Kuliah Cloud Computing<br/>
   Program Studi D-IV Teknik Informatika · Fakultas Vokasi · Universitas Airlangga
 </p>
+=======
+# cc_sanggartari
+>>>>>>> 1ca8d16760af6f44742dbbd75b0f1956ea06674e

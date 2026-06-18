@@ -11,9 +11,18 @@
 // 5. Copy URL deployment → paste ke GAS_URL di index.html
 // ══════════════════════════════════════════════════════════════
 
+<<<<<<< HEAD
 const SPREADSHEET_ID = "157ZMGhbOkFKfNZGzkXCIIGAogBDEeAEV7s1q8LvQEvs";
 const SHEET_NAME = "sanggar"; // nama tab sheet di Google Sheets
 const INFO_SHEET_NAME = "InfoBudaya"; // nama tab sheet info budaya
+=======
+const SPREADSHEET_ID = "GANTI_DENGAN_ID_GOOGLE_SHEET_KAMU";
+// Cara dapat ID: buka Google Sheet, lihat URL
+// https://docs.google.com/spreadsheets/d/[INI_ID_NYA]/edit
+// Contoh: "1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgVE2upms"
+
+const SHEET_NAME = "sanggar"; // nama tab sheet di Google Sheets
+>>>>>>> 1ca8d16760af6f44742dbbd75b0f1956ea06674e
 
 // ══════════════════════════════════════════════════════════════
 // HANDLER UTAMA — dipanggil saat ada request GET
@@ -23,15 +32,26 @@ function doGet(e) {
   const id     = e.parameter.id    || null;
   const q      = e.parameter.q     || null;
   const cat    = e.parameter.category || null;
+<<<<<<< HEAD
+=======
+
+>>>>>>> 1ca8d16760af6f44742dbbd75b0f1956ea06674e
   let result;
 
   try {
     switch (action) {
+<<<<<<< HEAD
       case "getAll":         result = getAllPlaces(q, cat); break;
       case "getById":        result = getById(id);          break;
       case "getCategories":  result = getCategories();      break;
       case "getInfo":        result = getInfo(q, cat);      break;
       default:               result = error("Action tidak dikenal: " + action);
+=======
+      case "getAll":      result = getAllPlaces(q, cat); break;
+      case "getById":     result = getById(id);          break;
+      case "getCategories": result = getCategories();    break;
+      default:            result = error("Action tidak dikenal: " + action);
+>>>>>>> 1ca8d16760af6f44742dbbd75b0f1956ea06674e
     }
   } catch (err) {
     result = error(err.toString());
@@ -145,6 +165,7 @@ function getCategories() {
 }
 
 // ══════════════════════════════════════════════════════════════
+<<<<<<< HEAD
 // FUNGSI: Ambil data Info Budaya (Pagelaran/Festival/Workshop/Event)
 // Endpoint: ?action=getInfo
 //           ?action=getInfo&q=tari              (search keyword)
@@ -195,6 +216,8 @@ function getInfo(q, category) {
 }
 
 // ══════════════════════════════════════════════════════════════
+=======
+>>>>>>> 1ca8d16760af6f44742dbbd75b0f1956ea06674e
 // FUNGSI: Tambah data tempat baru (admin)
 // Dipanggil via POST dengan body JSON
 // ══════════════════════════════════════════════════════════════
@@ -225,12 +248,18 @@ function rowToObject(row, headers, rowIndex) {
   headers.forEach((h, i) => {
     let val = row[i];
     if (val === null || val === undefined) val = "";
+<<<<<<< HEAD
 
     if (h === "latitude" || h === "longitude") {
       // Perbaikan parsing koordinat
       if (typeof val === "string") val = val.replace(/[^0-9.-]/g, "");
       val = parseFloat(val);
       if (isNaN(val)) val = null;
+=======
+    // Parse koordinat jadi float
+    if (h === "latitude" || h === "longitude") {
+      val = parseFloat(val) || null;
+>>>>>>> 1ca8d16760af6f44742dbbd75b0f1956ea06674e
     } else {
       val = val.toString().trim();
     }
@@ -252,7 +281,11 @@ function getCategory(nama) {
 }
 
 // ══════════════════════════════════════════════════════════════
+<<<<<<< HEAD
 // HELPER: Akses sheet utama (sanggar)
+=======
+// HELPER: Akses sheet
+>>>>>>> 1ca8d16760af6f44742dbbd75b0f1956ea06674e
 // ══════════════════════════════════════════════════════════════
 function getSheet() {
   const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
@@ -278,9 +311,12 @@ function testGetAll() {
 function testGetById() {
   const result = getById(1);
   Logger.log(JSON.stringify(result));
+<<<<<<< HEAD
 }
 
 function testGetInfo() {
   const result = getInfo(null, null);
   Logger.log(JSON.stringify(result));
+=======
+>>>>>>> 1ca8d16760af6f44742dbbd75b0f1956ea06674e
 }
